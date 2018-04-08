@@ -1,0 +1,14 @@
+* asset-bundle
+  This library aims to solve the problem of bundling a Haskell executable with
+  its [[https://www.haskell.org/cabal/users-guide/developing-packages.html#pkg-field-data-files][assets]] *and* those in its dependencies by providing a couple of functions
+  you can call from your project's ~Setup.hs~ so that doing `{cabal, stack}
+  build` also creates a [[https://en.wikipedia.org/wiki/Zip_(file_format)][zip]] of the executable and all of the assets it needs
+  along with a launch script (a batch file on Windows and a shell script
+  otherwise) that runs the executable adjusting various environment variables so
+  that it can find them at runtime. Even if you're not deploying an executable
+  directly to your users this package still makes it considerably simpler to
+  dry-run on a test machine or in a Docker container.
+
+* Documentation
+  This library is extensively documented on [[http://hackage.haskell.org/package/asset-bundle/docs/Distribution-Simple-AssetBundle.html][Hackage]], including [[http://hackage.haskell.org/package/asset-bundle/docs/Distribution-Simple-AssetBundle.html#g:1][further motivation]]
+  for this library and a [[http://hackage.haskell.org/package/asset-bundle/docs/Distribution-Simple-AssetBundle.html#g:3][Quick Start Guide]].
