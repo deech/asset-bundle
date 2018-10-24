@@ -219,12 +219,17 @@ depsWithData localBuildInfo =
   The zip is named /\<executable-name\>_bundled.zip/ and it's copied
   to <https://www.stackage.org/haddock/lts-11.4/Cabal-2.0.1.1/Distribution-Simple-InstallDirs.html#v:bindir the Cabal-local bin directory>.
 
-  It takes a list of 'InstalledPackageInfo' , which can be generated using 'depsWithData', containing this project's dependencies so it can gather
-  up the resources  and @Maybe (Executable -> String)@ which allows you to add arbitrary content to the launch script before an executable is run;
-  more on that below in the 'Adding Custom Code', in the 'Launch Scripts'section below. Most of the time you'll probably want to pass in 'Nothing'.
+  It takes a list of 'InstalledPackageInfo' , which can be generated using
+  'depsWithData', containing this project's dependencies so it can gather up the
+  resources, a list of extra files (no directories!) ['FilePath'] you may want
+  to include that are just copied to the root of zip archive, and @Maybe
+  (Executable -> String)@ which allows you to add arbitrary content to the
+  launch script before an executable is run and; more on that below in the
+  'Adding Custom Code', in the 'Launch Scripts'section below. Most of the time
+  you'll probably want to pass in 'Nothing'.
 -}
-postCopy:: Maybe (Executable -> String) -> [InstalledPackageInfo] -> Args -> CopyFlags -> PackageDescription -> LocalBuildInfo -> IO ()
-postCopy preRun deps args copyFlags pd localBuildInfo  =
+postCopy:: Maybe (Executable -> String) -> [FilePath] -> [InstalledPackageInfo] -> Args -> CopyFlags -> PackageDescription -> LocalBuildInfo -> IO ()
+postCopy preRun extraFiles deps args copyFlags pd localBuildInfo  =
   let installDirs = absoluteInstallDirs pd localBuildInfo (fromFlag (copyDest copyFlags))
       binPref = bindir installDirs
       prefixOrSuffix componentLocalBuildInfo pathTemplate =
@@ -262,6 +267,7 @@ postCopy preRun deps args copyFlags pd localBuildInfo  =
                 in do
                 createDirectoryIfMissingVerbose normal False zipDir
                 mapM_ (\dep -> copyDirectoryRecursiveVerbose normal (takeDirectory (InstalledPackageInfo.dataDir dep)) zipDir) deps
+                mapM_ (\f -> copyFileVerbose normal f zipDir) extraFiles
                 case buildOS of
                   Windows -> installRunner "bat" bat
                   _ -> installRunner "sh" sh
