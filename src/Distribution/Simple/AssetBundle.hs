@@ -43,7 +43,7 @@ import Distribution.Simple.PackageIndex(topologicalOrder)
 import Distribution.Simple.Program(Program, simpleProgram, runProgram, defaultProgramDb)
 import Distribution.Simple.Program.Db(requireProgram)
 import Distribution.Simple.Setup(CopyFlags, fromFlag, copyDest)
-import Distribution.Simple.Utils (withTempDirectory, copyDirectoryRecursiveVerbose, createDirectoryIfMissingVerbose, installExecutableFile, copyFileVerbose, normaliseLineEndings)
+import Distribution.Simple.Utils (withTempDirectory, copyDirectoryRecursiveVerbose, createDirectoryIfMissingVerbose, installExecutableFile, copyFileVerbose, normaliseLineEndings, rawSystemExit)
 import Distribution.Text(display)
 import Distribution.Verbosity(normal, Verbosity)
 import System.Directory (getTemporaryDirectory, doesDirectoryExist, withCurrentDirectory, setOwnerExecutable, setPermissions, executable, getPermissions)
@@ -267,7 +267,10 @@ postCopy preRun extraFiles deps args copyFlags pd localBuildInfo  =
                 in do
                 createDirectoryIfMissingVerbose normal False zipDir
                 mapM_ (\dep -> copyDirectoryRecursiveVerbose normal (takeDirectory (InstalledPackageInfo.dataDir dep)) zipDir) deps
-                mapM_ (\f -> copyFileVerbose normal f zipDir) extraFiles
+                case buildOS of
+                  -- Windows has issues with copy file permissions
+                  Windows -> mapM_ (\f -> rawSystemExit normal "cp" [f, zipDir]) extraFiles
+                  _ -> mapM_ (\f -> copyFileVerbose normal f zipDir) extraFiles
                 case buildOS of
                   Windows -> installRunner "bat" bat
                   _ -> installRunner "sh" sh
