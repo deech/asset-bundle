@@ -14,7 +14,7 @@ description:         Please see the Hackage documentation at <http://hackage.has
 
 dependencies:
 - base >= 4.7 && < 5
-- Cabal >= 1.24.0.0
+- Cabal >= 2.0.0.2
 - directory >= 1.2.4.0
 - filepath
 library:

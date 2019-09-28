@@ -43,10 +43,10 @@ import Distribution.Simple.PackageIndex(topologicalOrder)
 import Distribution.Simple.Program(Program, simpleProgram, runProgram, defaultProgramDb)
 import Distribution.Simple.Program.Db(requireProgram)
 import Distribution.Simple.Setup(CopyFlags, fromFlag, copyDest)
-import Distribution.Simple.Utils (withTempDirectory, copyDirectoryRecursiveVerbose, createDirectoryIfMissingVerbose, installExecutableFile, copyFileVerbose, normaliseLineEndings, rawSystemExit)
+import Distribution.Simple.Utils (withTempDirectory, installDirectoryContents, createDirectoryIfMissingVerbose, installExecutableFile, copyFileVerbose, normaliseLineEndings, rawSystemExit)
 import Distribution.Text(display)
 import Distribution.Verbosity(normal, Verbosity)
-import System.Directory (getTemporaryDirectory, doesDirectoryExist, withCurrentDirectory, setOwnerExecutable, setPermissions, executable, getPermissions)
+import System.Directory (getTemporaryDirectory, doesDirectoryExist, withCurrentDirectory, setPermissions, executable, getPermissions)
 import System.FilePath ((</>), (<.>), takeFileName , takeDirectory)
 import Data.List(intercalate)
 import System.IO(withFile, hPutStr, IOMode(WriteMode))
@@ -242,13 +242,13 @@ postCopy preRun extraFiles deps args copyFlags pd localBuildInfo  =
     "bundleBuild."
     (\tmpDir -> withExeLBI pd
         localBuildInfo
-        (\executable componentLocalBuildInfo ->
+        (\exe componentLocalBuildInfo ->
             withCurrentDirectory
               tmpDir
               (
                 let installedExeName =
                       prefixOrSuffix componentLocalBuildInfo (progPrefix localBuildInfo) ++
-                      display (exeName executable) ++
+                      display (exeName exe) ++
                       prefixOrSuffix componentLocalBuildInfo (progSuffix localBuildInfo)
                     zipDir = installedExeName ++ "_bundled"
                     installRunner extension makeRunner =
@@ -258,7 +258,7 @@ postCopy preRun extraFiles deps args copyFlags pd localBuildInfo  =
                                      (
                                        case preRun of
                                         Nothing -> ""
-                                        Just f -> f executable
+                                        Just f -> f exe
                                      )
                       in do
                       withFile zipFile WriteMode (\handle -> hPutStr handle runner)
@@ -266,7 +266,7 @@ postCopy preRun extraFiles deps args copyFlags pd localBuildInfo  =
                       setPermissions zipFile (p { executable = True})
                 in do
                 createDirectoryIfMissingVerbose normal False zipDir
-                mapM_ (\dep -> copyDirectoryRecursiveVerbose normal (takeDirectory (InstalledPackageInfo.dataDir dep)) zipDir) deps
+                mapM_ (\dep -> installDirectoryContents normal (takeDirectory (InstalledPackageInfo.dataDir dep)) zipDir) deps
                 case buildOS of
                   -- Windows has issues with copy file permissions
                   Windows -> mapM_ (\f -> rawSystemExit normal "cp" [f, zipDir]) extraFiles
